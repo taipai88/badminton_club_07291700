@@ -1,0 +1,503 @@
+{% extends "base.html" %}
+
+{% block title %}預約資料查詢{% endblock %}
+
+{% block content %}
+    <h2>預約資料查詢</h2>
+    <p>
+        這是管理員查看所有預約資料的頁面。
+        <a href="{{ url_for('export_bookings_csv') }}" class="button">匯出.CSV</a>
+    </p>
+
+    {% if bookings %}
+    <table id="bookingsTable" border="1">
+        <thead>
+            <tr>
+                {# 點擊標題可排序，data-column-index 用於識別欄位 #}
+                <th onclick="sortTable(this)" data-column-index="0" data-sort-direction="asc" style="width: 5%;">ID <span class="sort-arrow"></span></th>
+                <th onclick="sortTable(this)" data-column-index="1" data-sort-direction="asc" style="width: 10%;">預約用戶名 <span class="sort-arrow"></span></th>
+                <th onclick="sortTable(this)" data-column-index="2" data-sort-direction="asc" style="width: 12%;">會員手機號碼 <span class="sort-arrow"></span></th> {# 新增會員手機號碼欄位 #}
+                <th onclick="sortTable(this)" data-column-index="3" data-sort-direction="asc" style="width: 12%;">球場名稱 <span class="sort-arrow"></span></th>
+                <th onclick="sortTable(this)" data-column-index="4" data-sort-direction="asc" style="width: 12%;">預約日期 <span class="sort-arrow"></span></th>
+                <th onclick="sortTable(this)" data-column-index="5" data-sort-direction="asc" style="width: 8%;">開始時間 <span class="sort-arrow"></span></th>
+                <th onclick="sortTable(this)" data-column-index="6" data-sort-direction="asc" style="width: 8%;">結束時間 <span class="sort-arrow"></span></th>
+                <th onclick="sortTable(this)" data-column-index="7" data-sort-direction="asc" style="width: 10%;">時段類別 <span class="sort-arrow"></span></th>
+                <th onclick="sortTable(this)" data-column-index="8" data-sort-direction="asc" style="width: 8%;">狀態 <span class="sort-arrow"></span></th>
+                <th onclick="sortTable(this)" data-column-index="9" data-sort-direction="asc" style="width: 15%;">建檔日期 <span class="sort-arrow"></span></th>
+            </tr>
+            <tr id="filterRow">
+                {# 篩選輸入框 #}
+                <th><input type="text" onkeyup="filterTable()" placeholder="篩選 ID"></th>
+                <th><input type="text" onkeyup="filterTable()" placeholder="篩選用戶名"></th>
+                {# 會員手機號碼篩選：增加 id, oninput 事件來格式化輸入 #}
+                <th><input type="text" id="filter-member_id" onkeyup="filterTable()" oninput="formatPhoneNumberInput(event)" placeholder="篩選手機號碼 (09XX-XXX-XXX)" pattern="09\d{2}-?\d{3}-?\d{3}" title="請輸入09XX-XXX-XXX或09XXXXXXXX格式" maxlength="12"></th>
+                {# 球場名稱篩選：改為下拉選擇 #}
+                <th>
+                    <select onchange="filterTable()" id="filter-court_name">
+                        <option value="">所有球場</option>
+                        {# 選項將由 JavaScript 動態填充 #}
+                    </select>
+                </th>
+                {# 預約日期篩選：改為開始日期和結束日期輸入框 #}
+                <th>
+                    <input type="date" onchange="filterTable()" id="filter-booking_date_start" title="開始日期">
+                    <input type="date" onchange="filterTable()" id="filter-booking_date_end" title="結束日期">
+                </th>
+                <th><input type="text" onkeyup="filterTable()" placeholder="篩選開始"></th>
+                <th><input type="text" onkeyup="filterTable()" placeholder="篩選結束"></th>
+                {# 時段類別篩選：改為下拉選擇 #}
+                <th>
+                    <select onchange="filterTable()" id="filter-time_slot_category">
+                        <option value="">所有時段</option>
+                        {# 選項將由 JavaScript 動態填充 #}
+                    </select>
+                </th>
+                {# 狀態篩選：改為下拉選擇 #}
+                <th>
+                    <select onchange="filterTable()" id="filter-status">
+                        <option value="">所有狀態</option>
+                        {# 選項將由 JavaScript 動態填充 #}
+                    </select>
+                </th>
+                <th><input type="text" onkeyup="filterTable()" placeholder="篩選建檔日期"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for booking in bookings %}
+            <tr>
+                <td>{{ booking.id }}</td>
+                <td>{{ booking.user.username }}</td>
+                <td>{{ booking.user.formatted_member_id }}</td> {# 顯示會員手機號碼 #}
+                <td>{{ booking.court.name }}</td>
+                <td>{{ booking.booking_date.strftime('%Y-%m-%d') }}</td>
+                <td>{{ booking.start_time.strftime('%H:%M') }}</td>
+                <td>{{ booking.end_time.strftime('%H:%M') }}</td>
+                <td>{{ booking.time_slot_category }}</td>
+                {# 根據狀態添加顏色類別 #}
+                <td class="status-{{ booking.status | lower }}">
+                    {{ booking.status }}
+                </td>
+                <td>{{ booking.creation_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>目前沒有預約資料。</p>
+    {% endif %}
+
+    <p>已選筆數: <span id="visibleRowCount">0</span></p> {# 顯示已選筆數 #}
+
+    {# 分頁控制區塊 #}
+    <div class="pagination-controls" style="text-align: center; margin-top: 20px;">
+        <label for="rowsPerPageSelect">每頁顯示筆數:</label>
+        <select id="rowsPerPageSelect" onchange="changeRowsPerPage()">
+            <option value="5">5</option>
+            <option value="10" selected>10</option> {# 預設選中10筆 #}
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="all">所有</option>
+        </select>
+        <button id="prevPage" onclick="prevPage()">上一頁</button>
+        <span id="pageInfo">頁碼 1 / 1</span>
+        <button id="nextPage" onclick="nextPage()">下一頁</button>
+    </div>
+
+    <p><a href="{{ url_for('admin_users') }}">返回管理員用戶列表</a></p>
+
+    {# 將 style 和 script 區塊移到 block content 內部最下方 #}
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            table-layout: fixed; /* 確保欄寬固定 */
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            overflow: hidden; /* 隱藏超出內容 */
+            text-overflow: ellipsis; /* 顯示省略號 */
+            white-space: nowrap; /* 不換行 */
+        }
+        th {
+            background-color: #8CC63F; /* 青蘋果色 */
+            cursor: pointer; /* 標題可點擊 */
+            position: relative; /* 用於箭頭定位 */
+        }
+        th input[type="text"], th select, th input[type="date"] { /* 統一輸入框和選擇框的樣式 */
+            width: calc(100% - 16px); /* 調整寬度 */
+            padding: 4px;
+            margin-top: 5px;
+            box-sizing: border-box; /* 包含 padding 在寬度內 */
+        }
+        th input[type="date"] {
+            width: calc(50% - 8px); /* 兩個日期輸入框各佔一半寬度 */
+            display: inline-block;
+        }
+        th input[type="date"]:first-of-type {
+            margin-right: 8px; /* 兩個日期輸入框之間的間距 */
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .sort-arrow {
+            display: inline-block;
+            width: 0;
+            height: 0;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+        .sort-arrow.asc {
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-bottom: 4px solid black; /* 向上箭頭 */
+        }
+        .sort-arrow.desc {
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 4px solid black; /* 向下箭頭 */
+        }
+        /* 新增狀態顏色樣式 */
+        .status-已取消 {
+            color: red;
+            font-weight: bold;
+        }
+        .status-已預約 {
+            color: blue;
+            font-weight: bold;
+        }
+    </style>
+
+    <script>
+        let currentSortedColumn = -1;
+        let sortDirection = 'asc';
+        let currentPage = 1;
+        let rowsPerPage = 10; // 預設每頁顯示10筆
+        let filteredRows = []; // 儲存篩選後可見的行
+
+        // 排序函數
+        function sortTable(header) {
+            console.log("sortTable called for column:", header.dataset.columnIndex); // Debug log
+            const table = document.getElementById("bookingsTable");
+            const tbody = table.tBodies[0];
+            const rows = Array.from(tbody.rows);
+            const columnIndex = parseInt(header.dataset.columnIndex);
+
+            // 重置所有箭頭
+            document.querySelectorAll('#bookingsTable th .sort-arrow').forEach(arrow => {
+                arrow.classList.remove('asc', 'desc');
+            });
+
+            if (currentSortedColumn === columnIndex) {
+                sortDirection = (sortDirection === 'asc') ? 'desc' : 'asc';
+            } else {
+                currentSortedColumn = columnIndex;
+                sortDirection = 'asc';
+            }
+
+            // 更新當前點擊的標題的箭頭
+            const currentArrow = header.querySelector('.sort-arrow');
+            if (currentArrow) {
+                currentArrow.classList.add(sortDirection);
+            }
+
+            rows.sort((a, b) => {
+                let aValue = a.cells[columnIndex].textContent.trim();
+                let bValue = b.cells[columnIndex].textContent.trim();
+
+                // 嘗試將值轉換為數字或日期進行比較
+                if (columnIndex === 0) { // ID 欄位 (數字)
+                    aValue = parseInt(aValue);
+                    bValue = parseInt(bValue);
+                } else if (columnIndex === 4 || columnIndex === 9) { // 預約日期 (現索引4) 或 建檔日期 (現索引9)
+                    // 處理日期格式 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS
+                    aValue = new Date(aValue);
+                    bValue = new Date(bValue);
+                } else if (columnIndex === 5 || columnIndex === 6) { // 開始時間 (現索引5) 或 結束時間 (現索引6)
+                    // 將 HH:MM 轉換為分鐘數進行比較
+                    const parseTime = (timeStr) => {
+                        const [hours, minutes] = timeStr.split(':').map(Number);
+                        return hours * 60 + minutes;
+                    };
+                    aValue = parseTime(aValue);
+                    bValue = parseTime(bValue);
+                } else if (columnIndex === 2) { // 會員手機號碼欄位 (現索引2)
+                    // 排序時也移除破折號進行比較，確保正確排序
+                    aValue = aValue.replace(/-/g, '').toLowerCase();
+                    bValue = bValue.replace(/-/g, '').toLowerCase();
+                }
+                else {
+                    // 字符串比較
+                    aValue = aValue.toLowerCase();
+                    bValue = bValue.toLowerCase();
+                }
+
+                let comparison = 0;
+                if (aValue > bValue) {
+                    comparison = 1;
+                } else if (aValue < bValue) {
+                    comparison = -1;
+                }
+                return (sortDirection === 'asc') ? comparison : -comparison;
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+            filterTable(); // 排序後重新篩選並更新分頁
+            console.log("Table sorted. Visible rows updated."); // Debug log
+        }
+
+        // 篩選函數
+        function filterTable() {
+            console.log("filterTable called."); // Debug log
+            const table = document.getElementById("bookingsTable");
+            const tbody = table.tBodies[0];
+            const allRows = Array.from(tbody.rows); // 獲取所有表格行
+            const filterRowCells = document.getElementById('filterRow').cells; 
+
+            filteredRows = []; // 重置篩選後的行
+
+            allRows.forEach(row => {
+                let rowMatches = true;
+                
+                // 遍歷篩選行的每個單元格，這與表格的列索引直接對應
+                // 新的索引對應關係：
+                // 0: ID (input text)
+                // 1: 預約用戶名 (input text)
+                // 2: 會員手機號碼 (input text)
+                // 3: 球場名稱 (select)
+                // 4: 預約日期 (input date, input date)
+                // 5: 開始時間 (input text)
+                // 6: 結束時間 (input text)
+                // 7: 時段類別 (select)
+                // 8: 狀態 (select)
+                // 9: 建檔日期 (input text)
+
+                for (let i = 0; i < filterRowCells.length; i++) {
+                    const filterCell = filterRowCells[i]; // 當前列的 <th> 元素
+                    const cellValue = row.cells[i].textContent.trim().toLowerCase(); // 當前行該列的文本值
+
+                    // 1. 處理預約日期欄位 (columnIndex 4)
+                    if (i === 4) { 
+                        const startDateInput = filterCell.querySelector('#filter-booking_date_start');
+                        const endDateInput = filterCell.querySelector('#filter-booking_date_end');
+                        const filterStartDate = startDateInput ? startDateInput.value : '';
+                        const filterEndDate = endDateInput ? endDateInput.value : '';
+
+                        if (filterStartDate || filterEndDate) {
+                            const bookingDate = new Date(cellValue); 
+                            if (filterStartDate && bookingDate < new Date(filterStartDate)) {
+                                rowMatches = false;
+                                break;
+                            }
+                            if (filterEndDate && bookingDate > new Date(filterEndDate)) {
+                                rowMatches = false;
+                                break;
+                            }
+                        }
+                    } 
+                    // 2. 處理會員手機號碼欄位 (columnIndex 2)
+                    else if (i === 2) { 
+                        const inputElement = filterCell.querySelector('input[type="text"]');
+                        if (inputElement) {
+                            // 將篩選輸入值和儲存格值都移除破折號後再進行比對
+                            const filterValue = inputElement.value.trim().replace(/-/g, '').toLowerCase();
+                            const normalizedCellValue = cellValue.replace(/-/g, '').toLowerCase();
+
+                            if (filterValue && !normalizedCellValue.includes(filterValue)) {
+                                rowMatches = false;
+                                break;
+                            }
+                        }
+                    }
+                    // 3. 處理下拉選擇器篩選 (columnIndex 3, 7, 8)
+                    else if (filterCell.querySelector('select')) {
+                        const selectElement = filterCell.querySelector('select');
+                        const filterValue = selectElement.value.toLowerCase();
+                        if (filterValue && filterValue !== cellValue) { 
+                            rowMatches = false;
+                            break;
+                        }
+                    } 
+                    // 4. 處理通用文字輸入框篩選 (columnIndex 0, 1, 5, 6, 9)
+                    else if (filterCell.querySelector('input[type="text"]')) {
+                        const inputElement = filterCell.querySelector('input[type="text"]');
+                        const filterValue = inputElement.value.toLowerCase();
+                        if (filterValue && !cellValue.includes(filterValue)) {
+                            rowMatches = false;
+                            break;
+                        }
+                    }
+                }
+                if (rowMatches) {
+                    filteredRows.push(row); // 將匹配的行加入 filteredRows
+                }
+            });
+
+            currentPage = 1; // 篩選後重置到第一頁
+            displayRows(); // 顯示當前頁的行
+            updateVisibleRowCount(); // 更新總可見筆數
+            console.log("Table filtered. Total filtered rows:", filteredRows.length); // Debug log
+        }
+
+        // 動態填充下拉篩選選項
+        function populateFilterDropdowns() {
+            console.log("populateFilterDropdowns called."); // Debug log
+            const table = document.getElementById("bookingsTable");
+            if (!table || !table.tBodies[0]) {
+                console.warn("Table or tbody not found for dropdown population."); // Debug warning
+                return;
+            }
+
+            const tbody = table.tBodies[0];
+            const rows = Array.from(tbody.rows);
+
+            // 定義需要動態填充的下拉選擇器及其對應的列索引
+            // 新的索引對應關係：
+            // filter-court_name: columnIndex 3
+            // filter-time_slot_category: columnIndex 7
+            // filter-status: columnIndex 8
+            const dropdownsToPopulate = [
+                { id: 'filter-court_name', columnIndex: 3 }, 
+                { id: 'filter-time_slot_category', columnIndex: 7 }, 
+                { id: 'filter-status', columnIndex: 8 }  
+            ];
+
+            dropdownsToPopulate.forEach(dropdownInfo => {
+                const selectElement = document.getElementById(dropdownInfo.id);
+                if (!selectElement) return;
+
+                const uniqueValues = new Set();
+                rows.forEach(row => {
+                    uniqueValues.add(row.cells[dropdownInfo.columnIndex].textContent.trim());
+                });
+
+                // 清除舊選項 (除了第一個「所有」選項)
+                while (selectElement.options.length > 1) {
+                    selectElement.remove(1);
+                }
+
+                // 添加新選項
+                Array.from(uniqueValues).sort((a, b) => {
+                    return a.localeCompare(b); 
+                }).forEach(value => {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = value;
+                    selectElement.appendChild(option);
+                });
+            });
+            filterTable(); // 初始載入時也執行一次篩選，以更新計數和分頁
+            console.log("Dropdowns populated and filterTable called."); // Debug log
+        }
+
+        // 更新可見行數 (總篩選後的筆數)
+        function updateVisibleRowCount() {
+            document.getElementById('visibleRowCount').textContent = filteredRows.length;
+            console.log("Total filtered row count updated to:", filteredRows.length); // Debug log
+        }
+
+        // 顯示當前頁的行
+        function displayRows() {
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+
+            const totalPages = (rowsPerPage === 'all') ? 1 : Math.ceil(filteredRows.length / rowsPerPage);
+
+            // 隱藏所有行
+            const table = document.getElementById("bookingsTable");
+            const allRowsInTbody = Array.from(table.tBodies[0].rows);
+            allRowsInTbody.forEach(row => row.style.display = 'none');
+
+            // 顯示當前頁的行
+            if (rowsPerPage === 'all') { // 顯示所有行
+                filteredRows.forEach(row => row.style.display = '');
+                document.getElementById('pageInfo').textContent = `所有 ${filteredRows.length} 筆`;
+                document.getElementById('prevPage').disabled = true;
+                document.getElementById('nextPage').disabled = true;
+            } else {
+                for (let i = 0; i < filteredRows.length; i++) {
+                    if (i >= startIndex && i < endIndex) {
+                        filteredRows[i].style.display = '';
+                    } else {
+                        filteredRows[i].style.display = 'none';
+                    }
+                }
+                document.getElementById('pageInfo').textContent = `頁碼 ${currentPage} / ${totalPages}`;
+                document.getElementById('prevPage').disabled = currentPage === 1;
+                document.getElementById('nextPage').disabled = currentPage === totalPages || totalPages === 0;
+            }
+            console.log(`Displaying page ${currentPage} (rows ${startIndex} to ${endIndex-1}). Total filtered: ${filteredRows.length}`);
+        }
+
+        // 改變每頁顯示筆數
+        function changeRowsPerPage() {
+            const selectElement = document.getElementById('rowsPerPageSelect');
+            rowsPerPage = selectElement.value === 'all' ? 'all' : parseInt(selectElement.value);
+            currentPage = 1; // 改變每頁筆數後回到第一頁
+            displayRows();
+            console.log("Rows per page changed to:", rowsPerPage);
+        }
+
+        // 上一頁
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                displayRows();
+                console.log("Moved to previous page:", currentPage);
+            }
+        }
+
+        // 下一頁
+        function nextPage() {
+            const totalPages = (rowsPerPage === 'all') ? 1 : Math.ceil(filteredRows.length / rowsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                displayRows();
+                console.log("Moved to next page:", currentPage);
+            }
+        }
+
+        // 新增函數：格式化手機號碼輸入
+        function formatPhoneNumberInput(event) {
+            let input = event.target;
+            let value = input.value.replace(/\D/g, ''); // 移除所有非數字字符
+
+            let formattedValue = '';
+            if (value.length > 0) {
+                formattedValue += value.substring(0, 4); // 09XX
+            }
+            if (value.length > 4) {
+                formattedValue += '-' + value.substring(4, 7); // -XXX
+            }
+            if (value.length > 7) {
+                formattedValue += '-' + value.substring(7, 10); // -XXX
+            }
+            
+            input.value = formattedValue;
+            // filterTable() 函數已經綁定到 onkeyup，所以會自動觸發篩選
+        }
+
+        // 頁面載入完成後執行
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                populateFilterDropdowns(); // 這會觸發 filterTable()，進而觸發 displayRows() 和 updateVisibleRowCount()
+                console.log("DOMContentLoaded functions executed.");
+            } catch (e) {
+                console.error("Error during DOMContentLoaded operations:", e);
+            }
+        });
+    </script>
+{% endblock %}

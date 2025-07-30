@@ -1,0 +1,519 @@
+{% extends "base.html" %}
+
+{% block title %}會員管理{% endblock %} {# 移除 "管理員：" #}
+
+{% block content %}
+    <h2>會員管理</h2> {# 移除 "管理員：" #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <p>
+        這是管理員查看所有會員資料的頁面。
+        <a href="{{ url_for('add_user') }}" class="button add-button">新增會員</a> {# 新增會員按鈕，使用 add-button class #}
+        <a href="{{ url_for('export_members_csv') }}" class="button export-button">匯出.CSV</a> {# 匯出按鈕，使用 export-button class #}
+        <button type="button" id="viewChartBtnMembers" class="button chart-button">羽球等級圖表</button> {# 新增圖表按鈕 #}
+    </p>
+
+    {% if members %}
+    <table id="membersTable" border="1">
+        <thead>
+            <tr>
+                {# 點擊標題可排序，data-column-index 用於識別欄位 #}
+                <th onclick="sortTable(this)" data-column-index="0" data-sort-direction="asc" style="width: 5%;">ID <span class="sort-arrow"></span></th>
+                <th onclick="sortTable(this)" data-column-index="1" data-sort-direction="asc" style="width: 12%;">會員手機號碼 <span class="sort-arrow"></span></th>
+                <th onclick="sortTable(this)" data-column-index="2" data-sort-direction="asc" style="width: 10%;">會員名稱 <span class="sort-arrow"></span></th>
+                <th onclick="sortTable(this)" data-column-index="3" data-sort-direction="asc" style="width: 15%;">郵箱 <span class="sort-arrow"></span></th>
+                <th onclick="sortTable(this)" data-column-index="4" data-sort-direction="asc" style="width: 5%;">性別 <span class="sort-arrow"></span></th>
+                <th onclick="sortTable(this)" data-column-index="5" data-sort-direction="asc" style="width: 20%;">住家地址 <span class="sort-arrow"></span></th>
+                <th onclick="sortTable(this)" data-column-index="6" data-sort-direction="asc" style="width: 10%;">會員等級 <span class="sort-arrow"></span></th>
+                <th onclick="sortTable(this)" data-column-index="7" data-sort-direction="asc" style="width: 8%;">羽球等級 <span class="sort-arrow"></span></th>
+                <th onclick="sortTable(this)" data-column-index="8" data-sort-direction="asc" style="width: 8%;">是否為管理員 <span class="sort-arrow"></span></th>
+                <th style="width: 15%;">操作</th> {# 調整操作欄位寬度，確保按鈕可見 #}
+            </tr>
+            <tr id="filterRow">
+                {# 篩選輸入框 #}
+                <th><input type="text" onkeyup="filterTable()" placeholder="篩選 ID"></th>
+                <th><input type="text" onkeyup="filterTable()" placeholder="篩選手機"></th>
+                <th><input type="text" onkeyup="filterTable()" placeholder="篩選名稱"></th>
+                <th><input type="text" onkeyup="filterTable()" placeholder="篩選郵箱"></th>
+                {# 性別篩選：改為下拉選擇 #}
+                <th>
+                    <select onchange="filterTable()" id="filter-gender">
+                        <option value="">所有性別</option>
+                        {# 選項將由 JavaScript 動態填充 #}
+                    </select>
+                </th>
+                <th><input type="text" onkeyup="filterTable()" placeholder="篩選地址"></th>
+                {# 會員等級篩選：改為下拉選擇 #}
+                <th>
+                    <select onchange="filterTable()" id="filter-membership_type">
+                        <option value="">所有等級</option>
+                        {# 選項將由 JavaScript 動態填充 #}
+                    </select>
+                </th>
+                {# 羽球等級篩選：改為下拉選擇 #}
+                <th>
+                    <select onchange="filterTable()" id="filter-badminton_level">
+                        <option value="">所有等級</option>
+                        {# 選項將由 JavaScript 動態填充 #}
+                    </select>
+                </th>
+                {# 是否為管理員篩選：改為下拉選擇 #}
+                <th>
+                    <select onchange="filterTable()" id="filter-is_admin">
+                        <option value="">所有</option>
+                        <option value="是">是</option>
+                        <option value="否">否</option>
+                    </select>
+                </th>
+                <th></th> {# 操作欄位的篩選器留空 #}
+            </tr>
+        </thead>
+        <tbody>
+            {% for member in members %}
+            <tr>
+                <td>{{ member.id }}</td>
+                <td>{{ member.formatted_member_id }}</td>
+                <td>{{ member.username }}</td>
+                <td>{{ member.email if member.email else '未提供' }}</td>
+                <td>{{ member.gender }}</td>
+                <td>{{ member.address if member.address else '未提供' }}</td>
+                <td>{{ member.membership_type }}</td>
+                <td>{{ member.badminton_level }}</td>
+                <td>{{ '是' if member.is_admin else '否' }}</td>
+                <td class="actions-cell"> {# 新增 class 以便控制樣式 #}
+                    <a href="{{ url_for('edit_user', user_id=member.id) }}" class="action-button edit-button">編輯</a>
+                    <form action="{{ url_for('delete_user', user_id=member.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" onclick="return confirm('確定要刪除會員 {{ member.username }} 嗎？此操作不可逆，且會檢查是否有相關預約。');" class="action-button delete-button">刪除</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>目前沒有會員資料。</p>
+    {% endif %}
+
+    <p>已選筆數: <span id="visibleRowCount">0</span></p> {# 顯示已選筆數 #}
+
+    {# 分頁控制區塊 #}
+    <div class="pagination-controls" style="text-align: center; margin-top: 20px;">
+        <label for="rowsPerPageSelect">每頁顯示筆數:</label>
+        <select id="rowsPerPageSelect" onchange="changeRowsPerPage()">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="all">所有</option>
+        </select>
+        <button id="prevPage" onclick="prevPage()">上一頁</button>
+        <span id="pageInfo">頁碼 1 / 1</span>
+        <button id="nextPage" onclick="nextPage()">下一頁</button>
+    </div>
+
+    <p><a href="{{ url_for('dashboard') }}">返回儀表板</a></p>
+
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            table-layout: fixed; /* 確保欄寬固定 */
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            /* 移除可能導致內容被截斷的樣式 */
+            /* overflow: hidden; */ 
+            /* text-overflow: ellipsis; */
+            /* white-space: nowrap; */ 
+        }
+        th {
+            background-color: #8CC63F; /* 青蘋果色 */
+            cursor: pointer; /* 標題可點擊 */
+            position: relative; /* 用於箭頭定位 */
+        }
+        th input[type="text"], th select { /* 統一輸入框和選擇框的樣式 */
+            width: calc(100% - 16px); /* 調整寬度 */
+            padding: 4px;
+            margin-top: 5px;
+            box-sizing: border-box; /* 包含 padding 在寬度內 */
+        }
+        .button { /* 通用按鈕樣式 */
+            display: inline-block;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 8px; /* 圓角 */
+            margin-bottom: 10px;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+        }
+        .button:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+        .button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 新增會員按鈕 (藍色系) */
+        .add-button {
+            background-color: #4169E1; /* Royal Blue */
+            background-image: linear-gradient(to bottom, #4169E1, #2A4DBA);
+            color: white;
+        }
+        .add-button:hover {
+            background-color: #2A4DBA;
+            background-image: linear-gradient(to bottom, #2A4DBA, #1A3A90);
+        }
+
+        /* 匯出按鈕 (綠色系) */
+        .export-button {
+            background-color: #4CAF50; /* Green */
+            background-image: linear-gradient(to bottom, #4CAF50, #3C8D40);
+            color: white;
+        }
+        .export-button:hover {
+            background-color: #3C8D40;
+            background-image: linear-gradient(to bottom, #3C8D40, #2E6B30);
+        }
+
+        /* 圖表按鈕樣式 (紫色系，與註冊頁面區分) */
+        .chart-button { 
+            background-color: #8A2BE2; /* BlueViolet */
+            background-image: linear-gradient(to bottom, #8A2BE2, #6A1EB8);
+            color: white;
+        }
+        .chart-button:hover {
+            background-color: #6A1EB8;
+            background-image: linear-gradient(to bottom, #6A1EB8, #4D158A);
+        }
+
+
+        .sort-arrow {
+            display: inline-block;
+            width: 0;
+            height: 0;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+        .sort-arrow.asc {
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-bottom: 4px solid black; /* 向上箭頭 */
+        }
+        .sort-arrow.desc {
+            border-left: 44px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 4px solid black; /* 向下箭頭 */
+        }
+        .action-button { /* 編輯和刪除按鈕的基礎樣式 */
+            display: inline-block;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            text-decoration: none; /* 移除連結下劃線 */
+            color: white; /* 確保文字顏色為白色 */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+            margin: 2px; /* 增加按鈕間距 */
+        }
+        .action-button:hover {
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+            transform: translateY(-1px);
+        }
+        .action-button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 編輯按鈕 (青蘋果色) */
+        .edit-button {
+            background-color: #8CC63F; /* 青蘋果色 */
+            background-image: linear-gradient(to bottom, #8CC63F, #7BB035);
+        }
+        .edit-button:hover {
+            background-color: #7BB035;
+            background-image: linear-gradient(to bottom, #7BB035, #6A992A);
+        }
+
+        /* 刪除按鈕 (紅色系) */
+        .delete-button {
+            background-color: #FF4500; /* OrangeRed */
+            background-image: linear-gradient(to bottom, #FF4500, #CC3700);
+        }
+        .delete-button:hover {
+            background-color: #CC3700;
+            background-image: linear-gradient(to bottom, #CC3700, #992A00);
+        }
+
+        /* 針對操作欄位單元格的樣式，允許內容換行 */
+        .actions-cell {
+            white-space: normal; /* 允許換行 */
+            overflow: visible;   /* 確保內容可見 */
+            text-overflow: clip; /* 禁用省略號 */
+        }
+    </style>
+
+    <script>
+        let currentSortedColumn = -1;
+        let sortDirection = 'asc';
+        let currentPage = 1;
+        let rowsPerPage = 10; // 預設每頁顯示10筆
+        let filteredRows = []; // 儲存篩選後可見的行
+
+        // 排序函數
+        function sortTable(header) {
+            console.log("sortTable called for column:", header.dataset.columnIndex);
+            const table = document.getElementById("membersTable");
+            const tbody = table.tBodies[0];
+            const rows = Array.from(tbody.rows);
+            const columnIndex = parseInt(header.dataset.columnIndex);
+
+            document.querySelectorAll('#membersTable th .sort-arrow').forEach(arrow => {
+                arrow.classList.remove('asc', 'desc');
+            });
+
+            if (currentSortedColumn === columnIndex) {
+                sortDirection = (sortDirection === 'asc') ? 'desc' : 'asc';
+            } else {
+                currentSortedColumn = columnIndex;
+                sortDirection = 'asc';
+            }
+
+            const currentArrow = header.querySelector('.sort-arrow');
+            if (currentArrow) {
+                currentArrow.classList.add(sortDirection);
+            }
+
+            rows.sort((a, b) => {
+                let aValue = a.cells[columnIndex].textContent.trim();
+                let bValue = b.cells[columnIndex].textContent.trim();
+
+                if (!isNaN(aValue) && !isNaN(bValue) && aValue !== '' && bValue !== '') {
+                    aValue = parseFloat(aValue);
+                    bValue = parseFloat(bValue);
+                } else {
+                    aValue = aValue.toLowerCase();
+                    bValue = bValue.toLowerCase();
+                }
+
+                let comparison = 0;
+                if (aValue > bValue) {
+                    comparison = 1;
+                } else if (aValue < bValue) {
+                    comparison = -1;
+                }
+                return (sortDirection === 'asc') ? comparison : -comparison;
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+            filterTable(); // 排序後重新篩選並更新分頁
+            console.log("Table sorted. Visible rows updated.");
+        }
+
+        // 篩選函數
+        function filterTable() {
+            console.log("filterTable called.");
+            const table = document.getElementById("membersTable");
+            const tbody = table.tBodies[0];
+            const allRows = Array.from(tbody.rows);
+            const filterInputs = document.querySelectorAll('#filterRow input, #filterRow select');
+            
+            filteredRows = []; // 重置篩選後的行
+
+            allRows.forEach(row => {
+                let rowMatches = true;
+                for (let i = 0; i < filterInputs.length; i++) {
+                    // 跳過操作欄位的篩選器，因為它沒有對應的輸入框
+                    if (i === 9) continue; 
+
+                    const filterElement = filterInputs[i];
+                    const filterValue = filterElement.value.toLowerCase();
+                    const cellValue = row.cells[i].textContent.toLowerCase();
+
+                    if (filterValue && filterElement.tagName === 'SELECT') {
+                        if (filterValue !== cellValue) {
+                            rowMatches = false;
+                            break;
+                        }
+                    } else if (filterValue && !cellValue.includes(filterValue)) { // 如果篩選值不為空且不包含篩選值
+                        rowMatches = false;
+                        break;
+                    }
+                }
+                if (rowMatches) {
+                    filteredRows.push(row); // 將匹配的行加入 filteredRows
+                }
+            });
+
+            currentPage = 1; // 篩選後重置到第一頁
+            displayRows(); // 顯示當前頁的行
+            updateVisibleRowCount(); // 更新總可見筆數
+            console.log("Table filtered. Total filtered rows:", filteredRows.length);
+        }
+
+        // 動態填充下拉篩選選項
+        function populateFilterDropdowns() {
+            console.log("populateFilterDropdowns called.");
+            const table = document.getElementById("membersTable");
+            if (!table || !table.tBodies[0]) {
+                console.warn("Table or tbody not found for dropdown population.");
+                return;
+            }
+
+            const tbody = table.tBodies[0];
+            const rows = Array.from(tbody.rows);
+
+            const dropdownsToPopulate = [
+                { id: 'filter-gender', columnIndex: 4 },
+                { id: 'filter-membership_type', columnIndex: 6 },
+                { id: 'filter-badminton_level', columnIndex: 7 }
+            ];
+
+            dropdownsToPopulate.forEach(dropdownInfo => {
+                const selectElement = document.getElementById(dropdownInfo.id);
+                if (!selectElement) return;
+
+                const uniqueValues = new Set();
+                rows.forEach(row => {
+                    uniqueValues.add(row.cells[dropdownInfo.columnIndex].textContent.trim());
+                });
+
+                while (selectElement.options.length > 1) {
+                    selectElement.remove(1);
+                }
+
+                Array.from(uniqueValues).sort((a, b) => {
+                    if (dropdownInfo.id === 'filter-badminton_level') {
+                        return parseInt(a) - parseInt(b);
+                    }
+                    return a.localeCompare(b);
+                }).forEach(value => {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = value;
+                    selectElement.appendChild(option);
+                });
+            });
+            filterTable(); // 初始載入時也執行一次篩選，以更新計數和分頁
+            console.log("Dropdowns populated and filterTable called.");
+        }
+
+        // 更新可見行數 (總篩選後的筆數)
+        function updateVisibleRowCount() {
+            document.getElementById('visibleRowCount').textContent = filteredRows.length;
+            console.log("Total filtered row count updated to:", filteredRows.length);
+        }
+
+        // 顯示當前頁的行
+        function displayRows() {
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+
+            const totalPages = (rowsPerPage === 'all') ? 1 : Math.ceil(filteredRows.length / rowsPerPage);
+
+            // 隱藏所有行
+            const table = document.getElementById("membersTable");
+            const allRowsInTbody = Array.from(table.tBodies[0].rows);
+            allRowsInTbody.forEach(row => row.style.display = 'none');
+
+            // 顯示當前頁的行
+            if (rowsPerPage === 'all') { // 顯示所有行
+                filteredRows.forEach(row => row.style.display = '');
+                document.getElementById('pageInfo').textContent = `所有 ${filteredRows.length} 筆`;
+                document.getElementById('prevPage').disabled = true;
+                document.getElementById('nextPage').disabled = true;
+            } else {
+                for (let i = 0; i < filteredRows.length; i++) {
+                    if (i >= startIndex && i < endIndex) {
+                        filteredRows[i].style.display = '';
+                    } else {
+                        filteredRows[i].style.display = 'none';
+                    }
+                }
+                document.getElementById('pageInfo').textContent = `頁碼 ${currentPage} / ${totalPages}`;
+                document.getElementById('prevPage').disabled = currentPage === 1;
+                document.getElementById('nextPage').disabled = currentPage === totalPages || totalPages === 0;
+            }
+            console.log(`Displaying page ${currentPage} (rows ${startIndex} to ${endIndex-1}). Total filtered: ${filteredRows.length}`);
+        }
+
+        // 改變每頁顯示筆數
+        function changeRowsPerPage() {
+            const selectElement = document.getElementById('rowsPerPageSelect');
+            rowsPerPage = selectElement.value === 'all' ? 'all' : parseInt(selectElement.value);
+            currentPage = 1; // 改變每頁筆數後回到第一頁
+            displayRows();
+            console.log("Rows per page changed to:", rowsPerPage);
+        }
+
+        // 上一頁
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                displayRows();
+                console.log("Moved to previous page:", currentPage);
+            }
+        }
+
+        // 下一頁
+        function nextPage() {
+            const totalPages = (rowsPerPage === 'all') ? 1 : Math.ceil(filteredRows.length / rowsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                displayRows();
+                console.log("Moved to next page:", currentPage);
+            }
+        }
+
+        // 頁面載入完成後執行
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                populateFilterDropdowns(); // 這會觸發 filterTable()，進而觸發 displayRows() 和 updateVisibleRowCount()
+                console.log("DOMContentLoaded functions executed.");
+            } catch (e) {
+                console.error("Error during DOMContentLoaded operations:", e);
+            }
+
+            // 模態視窗邏輯 for this page
+            const modal = document.getElementById("chartModal");
+            const btn = document.getElementById("viewChartBtnMembers"); // 會員管理頁面專用的按鈕ID
+            const span = modal ? modal.querySelector(".close-button") : null;
+
+            if (btn && modal) {
+                btn.onclick = function() {
+                    modal.style.display = "flex";
+                }
+            }
+
+            if (span) {
+                span.onclick = function() {
+                    modal.style.display = "none";
+                }
+            }
+
+            window.addEventListener('click', function(event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            });
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}預約球隊{% endblock %} {# 將 "預約場地" 改為 "預約球隊" #}
+
+{% block content %}
+    <h2>預約球隊</h2> {# 將 "預約場地" 改為 "預約球隊" #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('book_court') }}">
+        <div class="form-group">
+            <label for="court_id">選擇球隊:</label>
+            <select id="court_id" name="court_id" required>
+                {% for court in courts %}
+                    <option value="{{ court.id }}">{{ court.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="booking_date">選擇日期:</label>
+            <input type="date" id="booking_date" name="booking_date" value="{{ today.strftime('%Y-%m-%d') }}" required>
+        </div>
+        <div class="form-group">
+            <label for="time_slot">選擇時段:</label>
+            <select id="time_slot" name="time_slot" required>
+                {% for slot in time_slots %}
+                    <option value="{{ slot }}">{{ slot }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="submit-button">確認預約</button>
+    </form>
+
+    <hr> {# 分隔線 #}
+
+    <h3>預約資料查詢</h3>
+    <p>
+        您可以點擊下方連結查看所有預約資料。
+        {# 連結已更新為新的無權限控管路由 #}
+        <a href="{{ url_for('query_bookings') }}" class="button">前往預約資料查詢</a>
+    </p>
+
+    <style>
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input[type="date"],
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; /* 確保 padding 不增加總寬度 */
+        }
+        .submit-button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .submit-button:hover {
+            background-color: #0056b3;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 10px; /* 與上方內容的間距 */
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        hr {
+            border: 0;
+            height: 1px;
+            background: #ccc;
+            margin: 30px 0;
+        }
+    </style>
+{% endblock %}

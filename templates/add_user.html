@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}新增會員{% endblock %}
+
+{% block content %}
+    <h2>新增會員</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('add_user') }}">
+        <div class="form-group">
+            <label for="member_id">手機號碼 (會員ID):</label>
+            <input type="text" id="member_id" name="member_id" required pattern="[0-9]{10}" title="請輸入10位數字的手機號碼">
+        </div>
+        <div class="form-group">
+            <label for="username">用戶名:</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <div class="form-group">
+            <label for="email">郵箱 (可選):</label>
+            <input type="email" id="email" name="email">
+        </div>
+        <div class="form-group">
+            <label for="password">密碼:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <div class="form-group">
+            <label for="gender">性別:</label>
+            <select id="gender" name="gender">
+                {% for gender in gender_options %}
+                    <option value="{{ gender }}">{{ gender }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="address">住家地址:</label>
+            <input type="text" id="address" name="address">
+        </div>
+        <div class="form-group">
+            <label for="membership_type">會員等級:</label>
+            <select id="membership_type" name="membership_type">
+                {% for type in membership_type_options %}
+                    <option value="{{ type }}">{{ type }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="badminton_level">羽球等級:</label>
+            <select id="badminton_level" name="badminton_level">
+                {% for level in badminton_level_options %}
+                    <option value="{{ level }}">{{ level }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group checkbox-group">
+            <input type="checkbox" id="is_admin" name="is_admin">
+            <label for="is_admin">是否為管理員</label>
+        </div>
+        <button type="submit" class="submit-button">新增會員</button>
+        <button type="button" id="viewChartBtnAddUser" class="button chart-button">羽球等級圖表</button> {# 新增圖表按鈕 #}
+    </form>
+    <p>已經有帳號了？ <a href="{{ url_for('login') }}">立即登入</a></p>
+
+    <style>
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="password"],
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 10px;
+            width: auto; /* 讓checkbox保持其原始大小 */
+        }
+        .submit-button, .button.chart-button { /* 統一按鈕樣式 */
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px; /* 更圓潤的圓角 */
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 陰影效果 */
+            transition: all 0.2s ease; /* 平滑過渡效果 */
+            color: white;
+            margin-right: 10px; /* 按鈕間距 */
+        }
+        .submit-button {
+            background-color: #007bff; /* 藍色 */
+            background-image: linear-gradient(to bottom, #007bff, #0056b3);
+        }
+        .submit-button:hover {
+            background-color: #0056b3;
+            background-image: linear-gradient(to bottom, #0056b3, #004085);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        .submit-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 圖表按鈕樣式 (紫色系，與註冊頁面區分) */
+        .chart-button { 
+            background-color: #8A2BE2; /* BlueViolet */
+            background-image: linear-gradient(to bottom, #8A2BE2, #6A1EB8);
+            color: white;
+        }
+        .chart-button:hover {
+            background-color: #6A1EB8;
+            background-image: linear-gradient(to bottom, #6A1EB8, #4D158A);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        .chart-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById("chartModal");
+            const btn = document.getElementById("viewChartBtnAddUser"); // 新增會員頁面專用的按鈕ID
+            const span = modal ? modal.querySelector(".close-button") : null; // 確保 modal 存在再查詢
+
+            // 當點擊按鈕時，打開模態視窗
+            if (btn && modal) {
+                btn.onclick = function() {
+                    modal.style.display = "flex"; // 使用 flex 佈局來居中內容
+                }
+            }
+
+            // 當點擊 <span> (x) 時，關閉模態視窗
+            if (span) {
+                span.onclick = function() {
+                    modal.style.display = "none";
+                }
+            }
+
+            // 當點擊模態視窗外部時，關閉模態視窗
+            window.addEventListener('click', function(event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            });
+        });
+    </script>
+{% endblock %}

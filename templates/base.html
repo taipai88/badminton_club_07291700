@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}羽球俱樂部智能系統{% endblock %}</title>
+    <style>
+        /* 整體網頁樣式 */
+        body {
+            font-family: Arial, sans-serif; /* 字體設定 */
+            margin: 0; /* 移除預設邊距 */
+            padding: 0; /* 移除預設內距 */
+            background-color: #E0F2F7; /* 羽球運動休閒風的淺藍色背景 */
+            color: #333; /* 主要文字顏色 */
+            /* 背景圖片設定 */
+            /* 請將 'background.jpg' 替換為您圖片在 static 資料夾中的實際檔名 */
+            background-image: url('{{ url_for('static', filename='background.jpg') }}'); 
+            background-repeat: no-repeat; /* 背景圖片不重複 */
+            background-size: cover; /* 背景圖片覆蓋整個背景區域 */
+            background-position: center center; /* 背景圖片居中 */
+            background-attachment: fixed; /* 背景圖片固定，不隨滾動條滾動 */
+        }
+        .container {
+            max-width: 1200px; /* 容器最大寬度 */
+            margin: 20px auto; /* 容器上下邊距20px，左右自動居中 */
+            padding: 20px; /* 容器內距 */
+            background-color: rgba(255, 255, 255, 0.85); /* 容器背景半透明，讓底圖可見 */
+            border-radius: 8px; /* 圓角邊框 */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* 陰影效果 */
+        }
+        header {
+            background-color: #E0F2F7; /* 導航欄背景色改為清新淺藍色 */
+            color: #333; /* 導航欄文字顏色改為深灰色，以增加對比度 */
+            padding: 10px 0; /* 導航欄上下內距 */
+            text-align: center; /* 文字居中 */
+        }
+        header h1 {
+            margin: 0; /* 移除標題預設邊距 */
+        }
+        .logged-in-count {
+            font-size: 0.9em;
+            color: #555; /* 登入人數文字顏色，可根據背景調整 */
+            margin-top: 5px;
+            text-align: center;
+        }
+        nav ul {
+            list-style-type: none; /* 移除列表符號 */
+            padding: 0; /* 移除列表內距 */
+            margin: 0; /* 移除列表邊距 */
+            display: flex; /* 使用Flexbox佈局 */
+            justify-content: center; /* 項目水平居中 */
+            background-color: #E0F2F7; /* 導航欄深色背景改為清新淺藍色 */
+        }
+        nav ul li {
+            margin: 0 15px; /* 導航項目之間間距 */
+        }
+        nav ul li a {
+            color: #333; /* 導航連結文字顏色改為深灰色 */
+            text-decoration: none; /* 移除下劃線 */
+            padding: 10px 15px; /* 連結內距 */
+            display: block; /* 讓連結佔據整個區域 */
+            transition: background-color 0.3s ease; /* 背景顏色過渡效果 */
+        }
+        nav ul li a:hover {
+            background-color: #B3D9E6; /* 導航欄懸停效果改為稍深的淺藍色 */
+        }
+        .flashes {
+            list-style-type: none; /* 移除列表符號 */
+            padding: 10px; /* 內距 */
+            margin: 10px 0; /* 邊距 */
+            border-radius: 5px; /* 圓角 */
+            font-size: 20px; /* 設定字體大小為 20px */
+            color: blue; /* 設定字體顏色為藍色 */
+        }
+        .flashes li {
+            padding: 8px 12px; /* 列表項內距 */
+            margin-bottom: 5px; /* 列表項下邊距 */
+            border-radius: 4px; /* 圓角 */
+            font-weight: bold; /* 字體加粗 */
+        }
+        .flashes .success {
+            background-color: #d4edda; /* 成功訊息背景色 */
+            /* color: #155724; */ /* 移除原有顏色設定，使用 .flashes 的藍色 */
+            border: 1px solid #c3e6cb; /* 成功訊息邊框 */
+        }
+        .flashes .danger {
+            background-color: #f8d7da; /* 危險訊息背景色 */
+            /* color: #721c24; */ /* 移除原有顏色設定，使用 .flashes 的藍色 */
+            border: 1px solid #f5c6cb; /* 危險訊息邊框 */
+        }
+        .flashes .warning {
+            background-color: #fff3cd; /* 警告訊息背景色 */
+            /* color: #856404; */ /* 移除原有顏色設定，使用 .flashes 的藍色 */
+            border: 1px solid #ffeeba; /* 警告訊息邊框 */
+        }
+        .flashes .info {
+            background-color: #d1ecf1; /* 資訊訊息背景色 */
+            /* color: #0c5460; */ /* 移除原有顏色設定，使用 .flashes 的藍色 */
+            border: 1px solid #bee5eb; /* 資訊訊息邊框 */
+        }
+        footer {
+            text-align: center; /* 文字居中 */
+            padding: 20px; /* 內距 */
+            margin-top: 30px; /* 上邊距 */
+            color: white; /* 將頁腳文字顏色設定為白色 */
+            border-top: 1px solid #eee; /* 頂部邊框 */
+        }
+        .designer-info {
+            color: white; /* 設定為白色 (保持不變，因為父元素已是白色) */
+        }
+
+        /* Modal (彈出視窗) 樣式 */
+        .modal {
+            display: none; /* 預設隱藏 */
+            position: fixed; /* 固定定位 */
+            z-index: 1000; /* 確保在最上層 */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto; /* 允許滾動 */
+            background-color: rgba(0,0,0,0.7); /* 半透明黑色背景 */
+            justify-content: center; /* 水平居中 */
+            align-items: center; /* 垂直居中 */
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto; /* 自動邊距，用於居中 */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* 寬度 */
+            max-width: 700px; /* 最大寬度 */
+            border-radius: 8px;
+            position: relative; /* 用於關閉按鈕定位 */
+            display: flex; /* 使用 flex 佈局 */
+            flex-direction: column; /* 垂直排列內容 */
+            align-items: center; /* 水平居中內容 */
+        }
+        .modal-content img {
+            max-width: 100%; /* 圖片最大寬度為容器寬度 */
+            height: auto; /* 高度自動調整 */
+            display: block; /* 避免圖片下方有多餘空間 */
+            margin-top: 10px; /* 圖片上方間距 */
+        }
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>羽球俱樂部智能系統</h1>
+        <div class="logged-in-count">
+            目前登入人數: {{ logged_in_users_count }}
+        </div>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('index') }}">首頁</a></li>
+                {% if 'user_id' in session %}
+                    <li><a href="{{ url_for('dashboard') }}">我的儀表板</a></li>
+                    <li><a href="{{ url_for('book_court') }}">預約球隊</a></li> {# 將 "預約場地" 改為 "預約球隊" #}
+                    {% if session.get('is_admin') %}
+                        {# 管理員功能下拉選單 #}
+                        <li class="dropdown">
+                            <a href="#" class="dropbtn">管理員功能 ▼</a>
+                            <div class="dropdown-content">
+                                <a href="{{ url_for('query_members') }}">會員管理</a> {# 直接導向會員管理主頁 #}
+                                <a href="{{ url_for('admin_courts') }}">球隊管理</a> {# 將 "球場管理" 改為 "球隊管理" #}
+                                <a href="{{ url_for('query_bookings') }}">預約資料查詢</a>
+                                <a href="#" id="viewChartBtn">羽球等級圖表</a> {# 新增查閱圖表按鈕 #}
+                            </div>
+                        </li>
+                    {% endif %}
+                    <li><a href="{{ url_for('logout') }}">登出 ({{ session.username }})</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('register') }}">註冊</a></li>
+                    <li><a href="{{ url_for('login') }}">登入</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        {% block content %}
+        {# 這裡將插入每個頁面特有的內容 #}
+        {% endblock %}
+    </div>
+
+    <footer>
+        <p>&copy; 2024 羽球俱樂部智能系統. All rights reserved.<br><span class="designer-info">開發設計初版: 謝忠翰</span></p>
+    </footer>
+
+    {# 圖表顯示模態視窗 #}
+    <div id="chartModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h3>羽球等級分佈圖</h3>
+            <img src="{{ url_for('static', filename='badminton_level_chart.png') }}" alt="羽球等級分佈圖" onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/333333?text=圖片載入失敗';">
+        </div>
+    </div>
+
+    <script>
+        // Dropdown Button
+        document.addEventListener('DOMContentLoaded', function() {
+            var dropdowns = document.querySelectorAll('.dropdown');
+            dropdowns.forEach(function(dropdown) {
+                dropdown.addEventListener('click', function() {
+                    this.querySelector('.dropdown-content').classList.toggle('show');
+                });
+            });
+
+            // Close the dropdown if the user clicks outside of it
+            window.onclick = function(event) {
+                if (!event.target.matches('.dropbtn')) {
+                    var dropdowns = document.getElementsByClassName("dropdown-content");
+                    for (var i = 0; i < dropdowns.length; i++) {
+                        var openDropdown = dropdowns[i];
+                        if (openDropdown.classList.contains('show')) {
+                            openDropdown.classList.remove('show');
+                        }
+                    }
+                }
+            }
+
+            // 模態視窗邏輯
+            const modal = document.getElementById("chartModal");
+            const btn = document.getElementById("viewChartBtn");
+            const span = document.getElementsByClassName("close-button")[0];
+
+            // 當點擊按鈕時，打開模態視窗
+            if (btn) {
+                btn.onclick = function() {
+                    modal.style.display = "flex"; // 使用 flex 佈局來居中內容
+                }
+            }
+
+            // 當點擊 <span> (x) 時，關閉模態視窗
+            if (span) {
+                span.onclick = function() {
+                    modal.style.display = "none";
+                }
+            }
+
+            // 當點擊模態視窗外部時，關閉模態視窗
+            window.addEventListener('click', function(event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            });
+        });
+    </script>
+    <style>
+        /* Dropdown Button */
+        .dropbtn {
+            background-color: #E0F2F7; /* 與導航欄背景色一致 */
+            color: #333;
+            padding: 10px 15px;
+            font-size: 1em;
+            border: none;
+            cursor: pointer;
+            display: block; /* 確保連結佔據足夠空間 */
+        }
+
+        /* The container <div> - needed to position the dropdown content */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        /* Dropdown Content (Hidden by Default) */
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 4px;
+            top: 100%; /* 確保下拉菜單在按鈕下方 */
+            left: 0;
+        }
+        .dropdown-content.show { /* 新增 show class */
+            display: block;
+        }
+
+        /* Links inside the dropdown */
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            text-align: left; /* 文本左對齊 */
+        }
+
+        /* Change color of dropdown links on hover */
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+            border-radius: 4px; /* 懸停時圓角 */
+        }
+
+        /* Show the dropdown menu on hover */
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        /* Change the background color of the dropdown button when the dropdown content is shown */
+        .dropdown:hover .dropbtn {
+            background-color: #B3D9E6; /* 與導航欄懸停色一致 */
+        }
+    </style>

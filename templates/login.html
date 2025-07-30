@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}登入{% endblock %}
+
+{% block content %}
+    <h2>會員登入</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <div style="margin-bottom: 20px; text-align: center;">
+        <p style="color: blue; font-size: 18px;">試用帳號: 1234567890</p>
+        <p style="color: blue; font-size: 18px;">試用密碼: 123</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('login') }}">
+        <div class="form-group">
+            <label for="member_id">手機號碼 (會員ID):</label>
+            <input type="text" id="member_id" name="member_id" required>
+        </div>
+        <div class="form-group">
+            <label for="password">密碼:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <button type="submit" class="submit-button">登入</button>
+    </form>
+    <p>還沒有帳號？ <a href="{{ url_for('register') }}">立即註冊</a></p>
+
+    <style>
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .submit-button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .submit-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+{% endblock %}

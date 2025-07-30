@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}管理會員{% endblock %}
+
+{% block content %}
+    <h2>管理會員</h2>
+    <p>此為管理員專屬頁面，提供以下核心功能，助您輕鬆管理俱樂部運營：</p>
+    <ul>
+        <li>輕鬆管理會員資料</li>
+        <li>線上預約羽毛球場地</li>
+        <li>追蹤您的課程進度</li>
+        <li>了解費用明細與報表</li>
+    </ul>
+
+    {# 管理員功能導航區塊 #}
+    <div style="margin-bottom: 20px;">
+        <h3>功能選單</h3>
+        <p>
+            <a href="{{ url_for('query_members') }}" class="button">會員管理</a> {# 導向會員管理主頁 #}
+            <a href="{{ url_for('admin_courts') }}" class="button">球場管理</a>
+            <a href="{{ url_for('query_bookings') }}" class="button">預約資料查詢</a>
+        </p>
+    </div>
+
+    <style>
+        /* 為新的按鈕添加樣式 */
+        .button {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #007bff; /* 藍色按鈕 */
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-right: 10px; /* 按鈕之間間距 */
+            margin-bottom: 10px;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+{% endblock %}

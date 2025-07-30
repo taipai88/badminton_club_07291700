@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}編輯會員資料{% endblock %}
+
+{% block content %}
+    <h2>編輯會員資料</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+    <form method="POST" action="{{ url_for('edit_user', user_id=user.id) }}">
+        {# 會員手機號碼 (member_id) 不可編輯，因為它是登入ID且唯一 #}
+        <div class="form-group">
+            <label for="member_id">會員手機號碼:</label>
+            <input type="text" id="member_id" value="{{ user.formatted_member_id }}" disabled>
+        </div>
+
+        <div class="form-group">
+            <label for="username">用戶名:</label>
+            <input type="text" id="username" name="username" value="{{ user.username }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="email">郵箱:</label>
+            <input type="email" id="email" name="email" value="{{ user.email if user.email else '' }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="gender">性別:</label>
+            <select id="gender" name="gender" required>
+                {% for option in gender_options %}
+                    <option value="{{ option }}" {% if option == user.gender %}selected{% endif %}>{{ option }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="address">住家地址:</label>
+            <input type="text" id="address" name="address" value="{{ user.address if user.address else '' }}">
+        </div>
+
+        <div class="form-group">
+            <label for="membership_type">會員等級:</label>
+            <select id="membership_type" name="membership_type" required>
+                {% for option in membership_type_options %}
+                    <option value="{{ option }}" {% if option == user.membership_type %}selected{% endif %}>{{ option }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="badminton_level">羽球等級:</label>
+            <select id="badminton_level" name="badminton_level" required>
+                {% for level in badminton_level_options %}
+                    <option value="{{ level }}" {% if level == user.badminton_level %}selected{% endif %}>{{ level }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group checkbox-group">
+            <input type="checkbox" id="is_admin" name="is_admin" {% if user.is_admin %}checked{% endif %}>
+            <label for="is_admin">是否為管理員</label>
+        </div>
+        
+        <button type="submit" class="submit-button">更新會員資料</button>
+    </form>
+    <p><a href="{{ url_for('query_members') }}">返回會員列表</a></p>
+
+    <style>
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 10px;
+            width: auto; /* 讓checkbox保持其原始大小 */
+        }
+        .submit-button {
+            /* 運動風格藍色按鈕 */
+            background-color: #4169E1; /* Royal Blue */
+            background-image: linear-gradient(to bottom, #4169E1, #2A4DBA); /* 漸層效果 */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px; /* 更圓潤的圓角 */
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 陰影效果 */
+            transition: all 0.2s ease; /* 平滑過渡效果 */
+        }
+        .submit-button:hover {
+            background-color: #2A4DBA; /* 懸停時顏色變深 */
+            background-image: linear-gradient(to bottom, #2A4DBA, #1A3A90);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* 懸停時陰影加深 */
+            transform: translateY(-2px); /* 輕微上浮效果 */
+        }
+        .submit-button:active {
+            transform: translateY(0); /* 點擊時恢復位置 */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* 點擊時陰影變淺 */
+        }
+    </style>
+{% endblock %}

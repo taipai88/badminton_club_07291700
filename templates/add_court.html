@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}新增球場{% endblock %}
+
+{% block content %}
+    <h2>新增球場</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('add_court') }}">
+        <div class="form-group">
+            <label for="name">球場名稱:</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <div class="form-group">
+            <label for="description">描述 (可選):</label>
+            <textarea id="description" name="description" rows="4"></textarea>
+        </div>
+        <button type="submit" class="submit-button">新增球場</button>
+    </form>
+    <p><a href="{{ url_for('admin_courts') }}">返回球場列表</a></p>
+
+    <style>
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .submit-button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .submit-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+{% endblock %}
