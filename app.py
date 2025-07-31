@@ -190,6 +190,8 @@ def register():
         address = request.form['address']
         membership_type = request.form['membership_type']
         badminton_level = int(request.form['badminton_level']) # 轉換為整數
+        # Retrieve the 'is_admin' checkbox value
+        is_admin = True if request.form.get('is_admin') == 'on' else False #
 
         # 後端驗證 member_id (手機號碼) 格式
         if not (len(member_id) == 10 and member_id.isdigit()):
@@ -212,7 +214,8 @@ def register():
                 gender=gender,
                 address=address,
                 membership_type=membership_type,
-                badminton_level=badminton_level
+                badminton_level=badminton_level,
+                is_admin=is_admin # Pass the retrieved is_admin value
             )
             new_user.set_password(password) # 設定加密後的密碼
             db.session.add(new_user)
@@ -743,13 +746,6 @@ def delete_court(court_id):
     
     return redirect(url_for('admin_courts'))
 
-# if __name__ == '__main__':
-#     create_tables_and_initial_data() 
-#     app.run(debug=True)
-
-
 if __name__ == '__main__':
     create_tables_and_initial_data() 
-    import os
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(debug=True)
