@@ -7,3 +7,5 @@
 羽球俱樂部智能系統.pdf[ https://drive.google.com/file/d/1SIsx5Miid9Y5JfB7GndlLbx7YhXCbhpy/view?usp=sharing](https://drive.google.com/file/d/1EKQoeGnx6pPaPTNQAsGmaNWyjCQ9dXYV/view?usp=drive_link)
 
 學經歷介紹 [https://drive.google.com/file/d/1EKQoeGnx6pPaPTNQAsGmaNWyjCQ9dXYV/view?usp=drive_lin](https://drive.google.com/file/d/1SIsx5Miid9Y5JfB7GndlLbx7YhXCbhpy/view?usp=sharing)
+
+謝忠翰 104版學經歷介紹  https://drive.google.com/file/d/1Avmw0UUbwWlrdCPNnya9JiY8BTHeaJPV/view?usp=drive_link
